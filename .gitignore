@@ -1,0 +1,5 @@
+worker/.venv/
+worker/__pycache__/
+worker/*.pyc
+.env
+.DS_Store

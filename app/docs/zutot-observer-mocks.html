@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Zutot Observer — mocks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:   #f7f3eb;
+    --paper-2: #efe9dc;
+    --ink:     #1a1a1a;
+    --ink-2:   #3a3a38;
+    --muted:   #8a857c;
+    --rule:    #d4cdbc;
+    --rule-2:  #c4bca8;
+
+    --dot-bad:    #7c3aed;
+    --dot-q:      #2563eb;
+    --dot-run:    #c97f17;
+    --dot-fresh:  #2f9e44;
+    --dot-idle:   #b8b1a3;
+
+    --q-bg: #eef2ff;
+    --q-br: #2563eb;
+
+    --serif: "Newsreader", Georgia, "Iowan Old Style", serif;
+    --mono:  "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #ebe5d6; color: var(--ink); font-family: var(--serif); }
+  body { padding: 32px 16px 96px; }
+
+  /* PAGE HEADER */
+  .page-head {
+    max-width: 1280px; margin: 0 auto 28px; padding: 0 12px;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  }
+  .page-head h1 { font-size: 22px; font-weight: 500; margin: 0; letter-spacing: -0.01em; }
+  .page-head .sub { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+  .section-label {
+    max-width: 1280px; margin: 24px auto 8px; padding: 0 12px;
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+
+  /* LAPTOP FRAME */
+  .laptop-frame {
+    max-width: 1280px; margin: 0 auto;
+    background: var(--paper);
+    border: 1px solid var(--rule-2);
+    border-radius: 14px;
+    box-shadow: 0 18px 38px -22px rgba(0,0,0,0.28), 0 2px 0 #d4cdbc;
+    overflow: hidden;
+    position: relative;
+  }
+  .laptop-chrome {
+    height: 28px; background: var(--paper-2);
+    border-bottom: 1px solid var(--rule);
+    display: flex; align-items: center; padding: 0 12px; gap: 6px;
+  }
+  .laptop-chrome .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #d4cdbc;
+  }
+  .laptop-chrome .url {
+    margin-left: 12px; font-family: var(--mono); font-size: 11px; color: var(--muted);
+  }
+  .laptop-body {
+    display: grid; grid-template-columns: 320px 1fr;
+    min-height: 640px;
+    position: relative;
+  }
+
+  /* LEFT PANE */
+  .pane-left {
+    border-right: 1px solid var(--rule);
+    background: var(--paper);
+  }
+  .pane-left .header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--rule);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .pane-left .header .title {
+    font-family: var(--mono); font-size: 12px; color: var(--ink-2); font-weight: 500;
+  }
+  .pane-left .header .folder {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+  }
+  .thread-row {
+    display: grid; grid-template-columns: 22px 1fr; gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+    cursor: pointer;
+    transition: background 0.12s ease;
+    position: relative;
+  }
+  .thread-row:hover { background: rgba(0,0,0,0.025); }
+  .thread-row.selected { background: var(--paper-2); }
+  .thread-row.selected::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--ink);
+  }
+  .thread-row .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    margin-top: 7px; align-self: start;
+    box-shadow: 0 0 0 2px var(--paper);
+  }
+  .thread-row.selected .dot { box-shadow: 0 0 0 2px var(--paper-2); }
+  .dot.bad   { background: var(--dot-bad); }
+  .dot.q     { background: var(--dot-q); }
+  .dot.run   { background: var(--dot-run); }
+  .dot.fresh { background: var(--dot-fresh); }
+  .dot.idle  { background: var(--dot-idle); }
+
+  .thread-row .slug {
+    font-family: var(--serif); font-size: 15.5px; line-height: 1.25; color: var(--ink);
+    font-weight: 500; letter-spacing: -0.005em;
+  }
+  .thread-row .meta {
+    margin-top: 4px;
+    font-family: var(--mono); font-size: 10.5px; color: var(--muted);
+    display: flex; gap: 10px;
+  }
+  .thread-row .meta .counts { color: var(--ink-2); }
+
+  /* RIGHT PANE */
+  .pane-right {
+    padding: 22px 28px 32px;
+    background: var(--paper);
+    overflow: auto;
+  }
+  .thread-header {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--rule);
+  }
+  .thread-header h2 {
+    margin: 0; font-family: var(--serif); font-weight: 500; font-size: 26px;
+    letter-spacing: -0.015em;
+  }
+  .thread-header .actions { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    font-family: var(--mono); font-size: 11.5px;
+    padding: 6px 10px; border: 1px solid var(--rule-2);
+    background: var(--paper-2); color: var(--ink-2);
+    border-radius: 6px; cursor: pointer;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { background: #e5dec9; }
+  .btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .btn.primary:hover { background: #000; }
+
+  .status-line {
+    margin-top: 8px; font-family: var(--mono); font-size: 12px; color: var(--muted);
+  }
+
+  .section {
+    margin-top: 22px;
+  }
+  .section-h {
+    font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--muted); margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .section-h .since {
+    text-transform: none; letter-spacing: 0; font-size: 11px;
+  }
+
+  /* QUESTION CARD */
+  .question-card {
+    background: var(--q-bg);
+    border-left: 3px solid var(--q-br);
+    border-top: 1px solid #dbe3fb;
+    border-right: 1px solid #dbe3fb;
+    border-bottom: 1px solid #dbe3fb;
+    padding: 14px 16px 14px 18px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+  .question-card .from {
+    font-family: var(--mono); font-size: 11px; color: #4338ca; margin-bottom: 8px;
+  }
+  .question-card .body {
+    font-family: var(--serif); font-size: 15px; line-height: 1.45;
+  }
+  .question-card .footer {
+    margin-top: 12px; display: flex; justify-content: flex-end;
+  }
+
+  /* JOB CARD */
+  .job-card {
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+  .job-card:hover { background: var(--paper-2); border-color: var(--rule-2); }
+  .job-card .top {
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .job-card .slug {
+    font-family: var(--mono); font-size: 12.5px; color: var(--ink); font-weight: 500;
+  }
+  .job-card .meta {
+    font-family: var(--mono); font-size: 10.5px; color: var(--muted);
+  }
+  .job-card.running { border-left: 3px solid var(--dot-run); padding-left: 11px; }
+  .job-card.done    { border-left: 3px solid var(--dot-fresh); padding-left: 11px; }
+
+  /* PROGRESS LOG */
+  .progress {
+    margin-top: 8px;
+    font-family: var(--mono); font-size: 11.5px; color: var(--ink-2);
+    background: rgba(0,0,0,0.025);
+    border-radius: 4px;
+    padding: 8px 10px;
+    line-height: 1.55;
+  }
+  .progress .line { white-space: pre; }
+  .progress .ts { color: var(--muted); }
+
+  /* NOTES */
+  .notes {
+    font-family: var(--serif); font-size: 15px; line-height: 1.6;
+    background: var(--paper); padding: 0;
+  }
+  .notes ul { margin: 4px 0 0 0; padding-left: 18px; }
+  .notes li { margin-bottom: 4px; }
+  .notes li .date { font-family: var(--mono); font-size: 11.5px; color: var(--muted); margin-right: 6px; }
+
+  /* PENDING LIST */
+  .pending-collapse summary {
+    cursor: pointer; list-style: none; outline: none;
+    font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 8px;
+  }
+  .pending-collapse summary::-webkit-details-marker { display: none; }
+  .pending-collapse summary::before { content: "▸"; }
+  .pending-collapse[open] summary::before { content: "▾"; }
+  .pending-list { list-style: none; padding: 0; margin: 0; }
+  .pending-list li {
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    border-radius: 6px;
+    padding: 9px 12px; margin-bottom: 6px;
+    font-family: var(--mono); font-size: 12.5px; color: var(--ink-2);
+    cursor: pointer;
+  }
+  .pending-list li:hover { background: var(--paper-2); }
+
+  /* OVERLAY */
+  .overlay-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(40, 35, 25, 0.42);
+    backdrop-filter: blur(2px);
+    display: none;
+    z-index: 5;
+  }
+  .overlay-backdrop.open { display: block; }
+  .overlay {
+    position: absolute; top: 28px; right: 32px; left: 352px; bottom: 32px;
+    background: var(--paper);
+    border: 1px solid var(--rule-2);
+    border-radius: 10px;
+    box-shadow: 0 24px 60px -20px rgba(0,0,0,0.45);
+    display: none; z-index: 10;
+    overflow: hidden;
+    flex-direction: column;
+  }
+  .overlay.open { display: flex; }
+  .overlay-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 18px; border-bottom: 1px solid var(--rule);
+    background: var(--paper-2);
+  }
+  .overlay-head .title {
+    font-family: var(--mono); font-size: 13px; color: var(--ink); font-weight: 500;
+  }
+  .overlay-head .state-pill {
+    font-family: var(--mono); font-size: 10.5px;
+    padding: 3px 8px; border-radius: 99px;
+    background: var(--paper); border: 1px solid var(--rule);
+    color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .overlay-head .close {
+    background: transparent; border: none; cursor: pointer;
+    font-size: 18px; color: var(--ink-2); padding: 4px 8px; border-radius: 4px;
+  }
+  .overlay-head .close:hover { background: var(--paper); }
+  .overlay-body { overflow: auto; padding: 18px 22px 28px; }
+  .overlay-body .kv {
+    font-family: var(--mono); font-size: 12px; color: var(--ink-2);
+    margin-bottom: 4px;
+  }
+  .overlay-body .kv .k { color: var(--muted); }
+  .overlay-body h3 {
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--muted); margin: 22px 0 8px; font-weight: 500;
+  }
+  .overlay-body .prose {
+    font-family: var(--serif); font-size: 15px; line-height: 1.55; color: var(--ink);
+  }
+  .overlay-body .prose p { margin: 0 0 10px; }
+  .overlay-body .prose ul { margin: 8px 0; padding-left: 22px; }
+  .overlay-body .prose li { margin-bottom: 4px; }
+
+  /* MOBILE FRAME */
+  .mobile-wrap {
+    max-width: 1280px; margin: 0 auto; padding: 0 12px;
+    display: flex; gap: 28px; justify-content: center; flex-wrap: wrap;
+  }
+  .phone {
+    width: 360px; flex-shrink: 0;
+    background: #1f1c17;
+    border-radius: 38px;
+    padding: 12px;
+    box-shadow: 0 18px 38px -22px rgba(0,0,0,0.45);
+    position: relative;
+  }
+  .phone-screen {
+    background: var(--paper);
+    border-radius: 28px;
+    overflow: hidden;
+    height: 680px;
+    position: relative;
+    display: flex; flex-direction: column;
+  }
+  .phone-notch {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    width: 90px; height: 22px; background: #1f1c17; border-radius: 12px;
+    z-index: 20;
+  }
+  .phone-label {
+    text-align: center; margin-top: 10px;
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+  }
+
+  /* MOBILE INTERNAL */
+  .m-topbar {
+    height: 52px;
+    padding: 0 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
+    padding-top: 18px;
+  }
+  .m-topbar .left { display: flex; align-items: center; gap: 8px; }
+  .m-topbar .back {
+    font-family: var(--mono); font-size: 13px; color: var(--ink-2);
+    background: transparent; border: none; cursor: pointer; padding: 4px 6px;
+  }
+  .m-topbar .title {
+    font-family: var(--mono); font-size: 12px; color: var(--ink-2); font-weight: 500;
+  }
+  .m-topbar .actions { display: flex; gap: 6px; }
+  .m-topbar .icon-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    border: 1px solid var(--rule-2); background: var(--paper-2);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 14px;
+  }
+  .m-screen { flex: 1; overflow: auto; }
+
+  .m-thread-row {
+    padding: 14px 16px;
+    display: grid; grid-template-columns: 18px 1fr 14px; gap: 10px;
+    align-items: start;
+    border-bottom: 1px solid var(--rule);
+    cursor: pointer;
+  }
+  .m-thread-row:hover { background: var(--paper-2); }
+  .m-thread-row .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; }
+  .m-thread-row .slug {
+    font-family: var(--serif); font-size: 16px; line-height: 1.25; color: var(--ink);
+    font-weight: 500;
+  }
+  .m-thread-row .meta {
+    margin-top: 4px;
+    font-family: var(--mono); font-size: 10.5px; color: var(--muted);
+  }
+  .m-thread-row .chev { color: var(--muted); font-size: 13px; margin-top: 6px; }
+
+  .m-thread-view { padding: 16px 16px 80px; }
+  .m-thread-view h2 {
+    font-family: var(--serif); font-size: 22px; font-weight: 500; margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .m-thread-view .status {
+    font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 18px;
+  }
+  .m-next {
+    position: sticky; bottom: 12px; margin: 16px 16px 0;
+    background: var(--ink); color: var(--paper);
+    font-family: var(--mono); font-size: 12px;
+    padding: 12px; border-radius: 8px; text-align: center;
+    cursor: pointer;
+  }
+
+  /* MOBILE OVERLAY */
+  .m-overlay {
+    position: absolute; inset: 0;
+    background: var(--paper);
+    display: none; flex-direction: column;
+    z-index: 30;
+  }
+  .m-overlay.open { display: flex; }
+  .m-overlay-head {
+    height: 52px;
+    padding: 18px 16px 0;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-2);
+  }
+  .m-overlay-head .title {
+    font-family: var(--mono); font-size: 12.5px; color: var(--ink); font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: 200px;
+  }
+  .m-overlay-head .right { display: flex; align-items: center; gap: 8px; }
+  .m-overlay-body { padding: 16px 16px 32px; overflow: auto; flex: 1; }
+
+  /* JOB IN OVERLAY — INLINE BLOCK */
+  .inline-spec {
+    font-family: var(--serif); font-size: 14.5px; line-height: 1.55;
+  }
+  .inline-spec ol { padding-left: 22px; margin: 8px 0; }
+
+  /* FOOTNOTE */
+  .legend {
+    max-width: 1280px; margin: 24px auto 0; padding: 14px 16px;
+    background: var(--paper); border: 1px dashed var(--rule-2);
+    border-radius: 8px;
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    display: flex; gap: 18px; flex-wrap: wrap; justify-content: center;
+  }
+  .legend .item { display: flex; align-items: center; gap: 6px; }
+  .legend .item .dot { width: 9px; height: 9px; border-radius: 50%; }
+
+  @media (max-width: 900px) {
+    .laptop-body { grid-template-columns: 240px 1fr; }
+    .pane-right { padding: 18px 18px 28px; }
+    .overlay { left: 280px; right: 16px; top: 36px; bottom: 16px; }
+  }
+  @media (max-width: 700px) {
+    .laptop-body { grid-template-columns: 180px 1fr; min-height: 540px; }
+    .pane-left .header .folder { display: none; }
+    .thread-row { padding: 10px 10px; }
+    .thread-row .slug { font-size: 13.5px; }
+    .pane-right { padding: 14px 14px 22px; }
+    .thread-header h2 { font-size: 20px; }
+    .overlay { left: 200px; right: 8px; top: 36px; bottom: 8px; }
+    .overlay-body { padding: 14px 16px 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Zutot Observer — interactive mocks</h1>
+  <div class="sub">click threads · click job cards · ✕ closes overlay</div>
+</div>
+
+<div class="section-label">— laptop —</div>
+
+<div class="laptop-frame">
+  <div class="laptop-chrome">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <span class="url">observer.zutot-lab-os</span>
+  </div>
+
+  <div class="laptop-body" id="laptop-body">
+
+    <aside class="pane-left">
+      <div class="header">
+        <span class="title">Threads</span>
+        <span class="folder">zutot-lab-os/</span>
+      </div>
+      <div id="thread-list"></div>
+    </aside>
+
+    <main class="pane-right" id="pane-right">
+      <!-- populated by JS -->
+    </main>
+
+    <div class="overlay-backdrop" id="overlay-backdrop"></div>
+    <div class="overlay" id="overlay">
+      <div class="overlay-head">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="title" id="overlay-title"></span>
+          <span class="state-pill" id="overlay-state"></span>
+        </div>
+        <button class="close" id="overlay-close">✕</button>
+      </div>
+      <div class="overlay-body" id="overlay-body"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section-label">— mobile —</div>
+
+<div class="mobile-wrap">
+
+  <div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="m-topbar">
+          <div class="left">
+            <span class="title">zutot-lab-os</span>
+          </div>
+          <div class="actions">
+            <div class="icon-btn" title="folder">⌄</div>
+          </div>
+        </div>
+        <div class="m-screen" id="m-list"></div>
+      </div>
+    </div>
+    <div class="phone-label">threads list</div>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen" style="position: relative;">
+        <div class="m-topbar">
+          <div class="left">
+            <button class="back">‹ Threads</button>
+          </div>
+          <div class="actions">
+            <div class="icon-btn" title="overleaf">↗</div>
+            <div class="icon-btn" title="chat">💬</div>
+          </div>
+        </div>
+        <div class="m-screen" id="m-thread"></div>
+        <div class="m-overlay" id="m-overlay">
+          <div class="m-overlay-head">
+            <button class="back" id="m-overlay-close">‹ Back</button>
+            <div class="right">
+              <span class="title" id="m-overlay-title"></span>
+              <span class="state-pill" id="m-overlay-state"></span>
+            </div>
+          </div>
+          <div class="m-overlay-body" id="m-overlay-body"></div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label">thread view (tap a job to open overlay)</div>
+  </div>
+
+</div>
+
+<div class="legend">
+  <div class="item"><span class="dot" style="background: var(--dot-bad);"></span> bad (deferred)</div>
+  <div class="item"><span class="dot" style="background: var(--dot-q);"></span> open question</div>
+  <div class="item"><span class="dot" style="background: var(--dot-run);"></span> running</div>
+  <div class="item"><span class="dot" style="background: var(--dot-fresh);"></span> fresh result</div>
+  <div class="item"><span class="dot" style="background: var(--dot-idle);"></span> idle</div>
+</div>
+
+<script>
+/* ============================================================ */
+/* DATA */
+/* ============================================================ */
+const threads = [
+  {
+    id: "paper-strategyproof-matching",
+    slug: "paper-strategyproof-matching",
+    status: "§3 draft, targeting EC 2026",
+    overleaf: "https://overleaf.com/project/abcd",
+    state: "q",
+    lastActivity: "5m",
+    counts: { d: 1, r: 1, p: 0 },
+    runningJobs: [{
+      id: "distortion-bound-proof",
+      progress: [
+        ["13:48", "picked up job"],
+        ["13:52", "asked question, halting"]
+      ],
+      halted: true
+    }],
+    openQuestion: {
+      fromJob: "distortion-bound-proof",
+      body: "Lemma 3 requires either monotonicity of the welfare function or strict pref-tie-breaking. Spec implies the former; latest §2 rewrite drops it. Which?"
+    },
+    recentlyDone: [
+      { id: "smt-encoding-experiments", when: "1d ago" }
+    ],
+    notes: [
+      { d: "2026-05-18", t: "Reviewer table built. Distortion bounds need an §3 lemma chain." },
+      { d: "2026-05-19", t: "SMT experiments confirm the worst-case n=7 instance." }
+    ],
+    pending: []
+  },
+  {
+    id: "paper-metric-voting",
+    slug: "paper-metric-voting",
+    status: "addressing reviewer comments, AAAI camera-ready",
+    overleaf: "https://overleaf.com/project/efgh",
+    state: "run",
+    lastActivity: "12m",
+    counts: { d: 3, r: 1, p: 2 },
+    runningJobs: [{
+      id: "address-reviewer-2",
+      progress: [
+        ["14:11", "picked up job"],
+        ["14:14", "reading reviewer-2.md"],
+        ["14:18", "drafting response to Q3"],
+        ["14:21", "regenerating Figure 4 with corrected x-axis"]
+      ],
+      halted: false
+    }],
+    openQuestion: null,
+    recentlyDone: [
+      { id: "rerun-experiments-fixed-seed", when: "3h ago" }
+    ],
+    notes: [
+      { d: "2026-05-17", t: "Reviewer 1 happy. Reviewer 2 wants Figure 4 redone." },
+      { d: "2026-05-18", t: "Seed bug found in experiments/run_all.py. Rerunning." }
+    ],
+    pending: [
+      "address-reviewer-1-minor",
+      "polish-related-work"
+    ]
+  },
+  {
+    id: "paper-zutot-lab-os",
+    slug: "paper-zutot-lab-os",
+    status: "drafting, no venue yet",
+    overleaf: "https://git.overleaf.com/6a0c2a0aba119f37e7de544e",
+    state: "fresh",
+    lastActivity: "2h",
+    counts: { d: 2, r: 1, p: 3 },
+    runningJobs: [{
+      id: "worker-progress-and-question-channels",
+      progress: [
+        ["14:22", "picked up job"],
+        ["14:23", "reading lab/worker.md"],
+        ["14:24", "drafting protocol patch — progress + question channels"],
+        ["14:27", "updating lab/student.md handshake section"]
+      ],
+      halted: false
+    }],
+    openQuestion: null,
+    recentlyDone: [
+      { id: "framing-and-related-work", when: "2h ago" },
+      { id: "tighten-thread-single-writer-rule", when: "2h ago" }
+    ],
+    notes: [
+      { d: "2026-05-19", t: "created thread. Tex skeleton in place; abstract drafted." },
+      { d: "2026-05-19", t: "framing review landed. Lead with the pattern; CHI > CSCW > DIS." },
+      { d: "2026-05-19", t: "single-writer rule tightened. README updated." }
+    ],
+    pending: [
+      "explicit-output-convention",
+      "student-interaction-protocol",
+      "parallel-worker-contract"
+    ]
+  },
+  {
+    id: "grant-isf-2027",
+    slug: "grant-isf-2027",
+    status: "outline; deadline Aug 15",
+    overleaf: null,
+    state: "idle",
+    lastActivity: "3d",
+    counts: { d: 1, r: 0, p: 0 },
+    runningJobs: [],
+    openQuestion: null,
+    recentlyDone: [],
+    notes: [
+      { d: "2026-05-15", t: "Budget draft landed. Need to redo section 2." }
+    ],
+    pending: []
+  },
+  {
+    id: "thesis-yael",
+    slug: "thesis-yael",
+    status: "ch.3 review pending",
+    overleaf: null,
+    state: "idle",
+    lastActivity: "1w",
+    counts: { d: 0, r: 0, p: 0 },
+    runningJobs: [],
+    openQuestion: null,
+    recentlyDone: [],
+    notes: [
+      { d: "2026-05-10", t: "Yael sent chapter 3 draft. Queued for review." }
+    ],
+    pending: []
+  }
+];
+
+// Spec/result content for the overlay (subset of jobs that we expose in detail)
+const jobDetails = {
+  "framing-and-related-work": {
+    state: "done",
+    thread: "paper-zutot-lab-os",
+    budget: "substantial — foundational review for the paper",
+    spec: `<p>Produce a thorough literature and market review for the Zutot Lab OS paper, plus a framing recommendation grounded in that review.</p>
+<ol>
+  <li>Literature review of the relevant scholarly conversations (multi-agent / agent-OS frameworks, HCI / mixed-initiative, PKM, scientific workflow systems, MCP discourse).</li>
+  <li>Market / product review of adjacent tools (Cursor, Cline, Aider, Devin, Claude Code, Obsidian/Logseq + AI, Notion AI, Raycast AI).</li>
+  <li>Comparison matrix of 6–10 representative systems along axes that matter.</li>
+  <li>Gap analysis: what is genuinely unclaimed in this space?</li>
+  <li>Framing recommendation; suggest 2–3 candidate venues.</li>
+  <li>Outlook-section seed sketching the governance / COMSOC angle.</li>
+</ol>`,
+    result: `<ul>
+  <li>Lit review (6 sub-areas); every citation flagged <strong>[C]</strong>/<strong>[V]</strong>/<strong>[U]</strong>.</li>
+  <li>Market review across 10 systems. Honest finding: no one publicly names the sync+async+shared-FS pattern.</li>
+  <li>Comparison matrix on 7 axes — Zutot is the only row combining all five commitments.</li>
+  <li>Gap analysis + one-sentence strongest contribution: a <em>named, minimal architecture</em> with three design commitments.</li>
+  <li>Framing rec: confirm framework + instantiations, but <strong>lead with the pattern, not the taxonomy</strong>. Venues: CHI &gt; CSCW &gt; DIS.</li>
+  <li>Outlook seed drafted (governance / COMSOC angle, explicitly parked).</li>
+</ul>`
+  },
+  "tighten-thread-single-writer-rule": {
+    state: "done",
+    thread: "paper-zutot-lab-os",
+    budget: "small — doc update",
+    spec: `<p>Tighten the single-writer rule in README.md so it's path-based and unambiguous. Update <code>lab/student.md</code> and <code>lab/worker.md</code> to match.</p>`,
+    result: `<ul>
+  <li>README updated with path-based table (<code>threads/*</code>, <code>lab/*</code>, <code>jobs/running/*</code>, etc).</li>
+  <li>Student-side: confirmed conventions for <code>lab/*</code> diff-and-confirm flow.</li>
+  <li>Worker-side: added explicit single-owner note for files affected by a running job.</li>
+</ul>`
+  },
+  "worker-progress-and-question-channels": {
+    state: "running",
+    thread: "paper-zutot-lab-os",
+    budget: "small-to-medium — protocol design + doc updates",
+    spec: `<p>Extend the lab's running-job protocol so Nimrod (and Student) have visibility into what the worker is doing, and so the worker can ask for clarification without failing.</p>
+<p><strong>Progress channel.</strong> The worker maintains a <code>progress.md</code> inside the running folder; appends timestamped entries on every meaningful decision.</p>
+<p><strong>Question channel.</strong> When the worker hits a genuine ambiguity it drops <code>question.md</code> and halts. Nimrod or Student supplies <code>answer.md</code>; worker resumes.</p>`,
+    progress: [
+      ["14:22", "picked up job"],
+      ["14:23", "reading lab/worker.md"],
+      ["14:24", "drafting protocol patch — progress + question channels"],
+      ["14:27", "updating lab/student.md handshake section"]
+    ]
+  },
+  "distortion-bound-proof": {
+    state: "running",
+    thread: "paper-strategyproof-matching",
+    budget: "medium — theorem chase",
+    spec: `<p>Prove the distortion bound for the strategyproof matching mechanism under ordinal preferences. Lemmas 1–3 should suffice; finish the chain.</p>`,
+    progress: [
+      ["13:48", "picked up job"],
+      ["13:52", "asked question, halting"]
+    ],
+    question: "Lemma 3 requires either monotonicity of the welfare function or strict pref-tie-breaking. Spec implies the former; latest §2 rewrite drops it. Which?"
+  },
+  "address-reviewer-2": {
+    state: "running",
+    thread: "paper-metric-voting",
+    budget: "medium — response writing + figure regen",
+    spec: `<p>Address reviewer 2's comments on the AAAI submission. Focus on the Figure 4 critique and the related-work omissions.</p>`,
+    progress: [
+      ["14:11", "picked up job"],
+      ["14:14", "reading reviewer-2.md"],
+      ["14:18", "drafting response to Q3"],
+      ["14:21", "regenerating Figure 4 with corrected x-axis"]
+    ]
+  },
+  "rerun-experiments-fixed-seed": {
+    state: "done",
+    thread: "paper-metric-voting",
+    budget: "small — recompute",
+    spec: `<p>Reseed experiments/run_all.py and rerun the full suite. Update all figures sourced from this output.</p>`,
+    result: `<ul>
+  <li>Reran 1,024 trials with corrected seed. All four figures regenerated.</li>
+  <li>Trend in Figure 4 is qualitatively unchanged, magnitudes shifted ≤4%.</li>
+  <li>No paper-text changes required.</li>
+</ul>`
+  },
+  "smt-encoding-experiments": {
+    state: "done",
+    thread: "paper-strategyproof-matching",
+    budget: "medium — experiments",
+    spec: `<p>Encode the strategyproof matching problem as SMT and search for worst-case distortion instances up to n=8.</p>`,
+    result: `<ul>
+  <li>Found worst-case instance at n=7 with distortion 1.4142...</li>
+  <li>n=8 timed out at 6h; instance for n=7 is likely tight.</li>
+</ul>`
+  }
+};
+
+const orderForState = { bad: 0, q: 1, run: 2, fresh: 3, idle: 4 };
+threads.sort((a, b) => orderForState[a.state] - orderForState[b.state]);
+
+let selectedId = "paper-zutot-lab-os"; // default
+
+/* ============================================================ */
+/* RENDER — LAPTOP */
+/* ============================================================ */
+function renderThreadList() {
+  const list = document.getElementById("thread-list");
+  list.innerHTML = "";
+  threads.forEach(t => {
+    const row = document.createElement("div");
+    row.className = "thread-row" + (t.id === selectedId ? " selected" : "");
+    row.innerHTML = `
+      <span class="dot ${t.state}"></span>
+      <div>
+        <div class="slug">${t.slug}</div>
+        <div class="meta">
+          <span>${t.lastActivity}</span>
+          <span class="counts">${t.counts.d}d ${t.counts.r}r ${t.counts.p}p</span>
+        </div>
+      </div>
+    `;
+    row.addEventListener("click", () => {
+      selectedId = t.id;
+      closeOverlay();
+      renderAll();
+    });
+    list.appendChild(row);
+  });
+}
+
+function renderThreadView() {
+  const t = threads.find(x => x.id === selectedId);
+  const pane = document.getElementById("pane-right");
+  let html = `
+    <div class="thread-header">
+      <h2>${t.slug}</h2>
+      <div class="actions">
+        ${t.overleaf ? `<a class="btn" href="${t.overleaf}" target="_blank">Overleaf ↗</a>` : ""}
+        <a class="btn primary" href="#" onclick="event.preventDefault();">💬 Student</a>
+      </div>
+    </div>
+    <div class="status-line">Status: ${t.status}</div>
+  `;
+
+  if (t.openQuestion) {
+    html += `
+      <div class="section">
+        <div class="section-h"><span>Open question</span></div>
+        <div class="question-card">
+          <div class="from">from job: <span style="font-weight:500;">${t.openQuestion.fromJob}</span></div>
+          <div class="body">${t.openQuestion.body}</div>
+          <div class="footer">
+            <a class="btn primary" href="#" onclick="event.preventDefault();">Answer in Student chat ↗</a>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (t.runningJobs.length) {
+    html += `
+      <div class="section">
+        <div class="section-h"><span>Running now</span></div>
+    `;
+    t.runningJobs.forEach(j => {
+      html += `
+        <div class="job-card running" data-job="${j.id}">
+          <div class="top">
+            <span class="slug">${j.id}</span>
+            <span class="meta">${j.halted ? "halted on question" : "in progress"}</span>
+          </div>
+          <div class="progress">
+            ${j.progress.map(([ts, msg]) => `<div class="line"><span class="ts">${ts}</span>  ${msg}</div>`).join("")}
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+
+  if (t.recentlyDone.length) {
+    html += `
+      <div class="section">
+        <div class="section-h"><span>Recently done</span><span class="since">since last visit</span></div>
+    `;
+    t.recentlyDone.forEach(d => {
+      html += `
+        <div class="job-card done" data-job="${d.id}">
+          <div class="top">
+            <span class="slug">${d.id}</span>
+            <span class="meta">${d.when}</span>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+
+  if (t.notes.length) {
+    html += `
+      <div class="section">
+        <div class="section-h"><span>Notes</span></div>
+        <div class="notes">
+          <ul>
+            ${t.notes.map(n => `<li><span class="date">${n.d}</span>${n.t}</li>`).join("")}
+          </ul>
+        </div>
+      </div>
+    `;
+  }
+
+  if (t.pending.length) {
+    const collapsed = t.pending.length > 5;
+    html += `
+      <div class="section">
+        <div class="section-h"><span>Pending (${t.pending.length})</span></div>
+        <details class="pending-collapse" ${collapsed ? "" : "open"}>
+          <summary>${collapsed ? "show" : "hide"}</summary>
+          <ul class="pending-list">
+            ${t.pending.map(p => `<li data-job="${p}">${p}</li>`).join("")}
+          </ul>
+        </details>
+      </div>
+    `;
+  }
+
+  pane.innerHTML = html;
+
+  // wire job-card clicks
+  pane.querySelectorAll("[data-job]").forEach(el => {
+    el.addEventListener("click", () => openOverlay(el.dataset.job));
+  });
+}
+
+/* ============================================================ */
+/* OVERLAY */
+/* ============================================================ */
+function openOverlay(jobId) {
+  const d = jobDetails[jobId];
+  if (!d) return;
+  document.getElementById("overlay-title").textContent = jobId;
+  document.getElementById("overlay-state").textContent = d.state;
+  let body = `
+    <div class="kv"><span class="k">thread:</span> ${d.thread}</div>
+    <div class="kv"><span class="k">budget:</span> ${d.budget}</div>
+    <h3>Spec</h3>
+    <div class="prose inline-spec">${d.spec}</div>
+  `;
+  if (d.progress) {
+    body += `<h3>Progress</h3><div class="progress">
+      ${d.progress.map(([ts, msg]) => `<div class="line"><span class="ts">${ts}</span>  ${msg}</div>`).join("")}
+    </div>`;
+  }
+  if (d.question) {
+    body += `<h3>Open question</h3>
+      <div class="question-card">
+        <div class="body">${d.question}</div>
+      </div>`;
+  }
+  if (d.result) {
+    body += `<h3>Result</h3><div class="prose">${d.result}</div>`;
+  }
+  document.getElementById("overlay-body").innerHTML = body;
+  document.getElementById("overlay").classList.add("open");
+  document.getElementById("overlay-backdrop").classList.add("open");
+
+  // also open mobile overlay
+  openMobileOverlay(jobId);
+}
+function closeOverlay() {
+  document.getElementById("overlay").classList.remove("open");
+  document.getElementById("overlay-backdrop").classList.remove("open");
+}
+document.getElementById("overlay-close").addEventListener("click", closeOverlay);
+document.getElementById("overlay-backdrop").addEventListener("click", closeOverlay);
+
+/* ============================================================ */
+/* RENDER — MOBILE */
+/* ============================================================ */
+function renderMobileList() {
+  const list = document.getElementById("m-list");
+  list.innerHTML = "";
+  threads.forEach(t => {
+    const row = document.createElement("div");
+    row.className = "m-thread-row";
+    row.innerHTML = `
+      <span class="dot ${t.state}"></span>
+      <div>
+        <div class="slug">${t.slug}</div>
+        <div class="meta">${t.lastActivity} · ${t.counts.d}d ${t.counts.r}r ${t.counts.p}p</div>
+      </div>
+      <div class="chev">›</div>
+    `;
+    row.addEventListener("click", () => {
+      selectedId = t.id;
+      renderAll();
+    });
+    list.appendChild(row);
+  });
+}
+
+function renderMobileThread() {
+  const t = threads.find(x => x.id === selectedId);
+  const root = document.getElementById("m-thread");
+  let html = `<div class="m-thread-view">
+    <h2>${t.slug}</h2>
+    <div class="status">Status: ${t.status}</div>
+  `;
+
+  if (t.openQuestion) {
+    html += `<div class="section">
+      <div class="section-h"><span>Open question</span></div>
+      <div class="question-card">
+        <div class="from">from: ${t.openQuestion.fromJob}</div>
+        <div class="body">${t.openQuestion.body}</div>
+        <div class="footer">
+          <a class="btn primary" href="#" onclick="event.preventDefault();">Answer in chat ↗</a>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  if (t.runningJobs.length) {
+    html += `<div class="section">
+      <div class="section-h"><span>Running now</span></div>`;
+    t.runningJobs.forEach(j => {
+      const last = j.progress[j.progress.length - 1];
+      html += `<div class="job-card running" data-job="${j.id}">
+        <div class="top">
+          <span class="slug">${j.id}</span>
+          <span class="meta">${j.halted ? "halted" : "live"}</span>
+        </div>
+        <div class="progress"><div class="line"><span class="ts">${last[0]}</span>  ${last[1]}</div></div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (t.recentlyDone.length) {
+    html += `<div class="section">
+      <div class="section-h"><span>Recently done</span><span class="since">since last visit</span></div>`;
+    t.recentlyDone.forEach(d => {
+      html += `<div class="job-card done" data-job="${d.id}">
+        <div class="top"><span class="slug">${d.id}</span><span class="meta">${d.when}</span></div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (t.notes.length) {
+    html += `<div class="section">
+      <div class="section-h"><span>Notes</span></div>
+      <div class="notes"><ul>
+        ${t.notes.map(n => `<li><span class="date">${n.d}</span>${n.t}</li>`).join("")}
+      </ul></div>
+    </div>`;
+  }
+
+  if (t.pending.length) {
+    const collapsed = t.pending.length > 5;
+    html += `<div class="section">
+      <div class="section-h"><span>Pending (${t.pending.length})</span></div>
+      <details class="pending-collapse" ${collapsed ? "" : "open"}>
+        <summary>${collapsed ? "show" : "hide"}</summary>
+        <ul class="pending-list">
+          ${t.pending.map(p => `<li data-job="${p}">${p}</li>`).join("")}
+        </ul>
+      </details>
+    </div>`;
+  }
+
+  html += `</div>
+    <div class="m-next">next thread ↓</div>
+  `;
+  root.innerHTML = html;
+  root.querySelectorAll("[data-job]").forEach(el => {
+    el.addEventListener("click", () => openOverlay(el.dataset.job));
+  });
+  root.querySelector(".m-next").addEventListener("click", () => {
+    const i = threads.findIndex(x => x.id === selectedId);
+    selectedId = threads[(i + 1) % threads.length].id;
+    renderAll();
+  });
+}
+
+function openMobileOverlay(jobId) {
+  const d = jobDetails[jobId];
+  if (!d) return;
+  document.getElementById("m-overlay-title").textContent = jobId;
+  document.getElementById("m-overlay-state").textContent = d.state;
+  let body = `
+    <div class="kv"><span class="k">thread:</span> ${d.thread}</div>
+    <div class="kv"><span class="k">budget:</span> ${d.budget}</div>
+    <h3>Spec</h3>
+    <div class="prose inline-spec">${d.spec}</div>
+  `;
+  if (d.progress) {
+    body += `<h3>Progress</h3><div class="progress">
+      ${d.progress.map(([ts, msg]) => `<div class="line"><span class="ts">${ts}</span>  ${msg}</div>`).join("")}
+    </div>`;
+  }
+  if (d.question) {
+    body += `<h3>Open question</h3>
+      <div class="question-card"><div class="body">${d.question}</div></div>`;
+  }
+  if (d.result) {
+    body += `<h3>Result</h3><div class="prose">${d.result}</div>`;
+  }
+  document.getElementById("m-overlay-body").innerHTML = body;
+  document.getElementById("m-overlay").classList.add("open");
+}
+document.getElementById("m-overlay-close").addEventListener("click", () => {
+  document.getElementById("m-overlay").classList.remove("open");
+});
+
+function renderAll() {
+  renderThreadList();
+  renderThreadView();
+  renderMobileList();
+  renderMobileThread();
+}
+renderAll();
+</script>
+
+</body>
+</html>

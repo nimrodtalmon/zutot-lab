@@ -10,6 +10,12 @@ interface Props {
   onOpenJob: (id: string) => void;
 }
 
+function overleafWebUrl(url: string): string {
+  const m = url.match(/^https?:\/\/git\.overleaf\.com\/([^/?#]+)/i);
+  if (m) return `https://www.overleaf.com/project/${m[1]}`;
+  return url;
+}
+
 export function ThreadView({ thread, studentProjectId, onOpenJob }: Props) {
   const prompt = `Resume work on thread \`${thread.slug}\`. Read \`threads/${thread.slug}.md\` and any relevant files under \`jobs/\` before responding.`;
   const studentHref = studentProjectId
@@ -34,7 +40,7 @@ export function ThreadView({ thread, studentProjectId, onOpenJob }: Props) {
           {thread.overleaf && (
             <a
               className="btn"
-              href={thread.overleaf}
+              href={overleafWebUrl(thread.overleaf)}
               target="_blank"
               rel="noopener noreferrer"
             >

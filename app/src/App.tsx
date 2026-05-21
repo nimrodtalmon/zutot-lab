@@ -38,6 +38,22 @@ function readStudentId(): string | null {
   return localStorage.getItem(STUDENT_KEY);
 }
 
+const THEME_KEY = "zutot.observer.theme";
+type Theme = "light" | "dark";
+function readTheme(): Theme {
+  try {
+    const v = localStorage.getItem(THEME_KEY);
+    if (v === "light" || v === "dark") return v;
+  } catch {}
+  if (
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-color-scheme: dark)").matches
+  ) {
+    return "dark";
+  }
+  return "light";
+}
+
 export default function App() {
   const [token, setToken] = useState<DriveToken | null>(() => readToken());
   const [folderId, setFolderId] = useState<string | null>(() => readFolderId());
@@ -54,14 +70,14 @@ export default function App() {
   const [resultCache, setResultCache] = useState<Record<string, string>>({});
   const [resultLoadingId, setResultLoadingId] = useState<string | null>(null);
   const [lastVisitVer, setLastVisitVer] = useState(0); // re-derive bump
-  const [toast, setToast] = useState<string | null>(null);
-  const toastTimerRef = useRef<number | null>(null);
+  const [theme, setTheme] = useState<Theme>(() => readTheme());
 
-  const showToast = useCallback((msg: string) => {
-    setToast(msg);
-    if (toastTimerRef.current !== null) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = window.setTimeout(() => setToast(null), 3500);
-  }, []);
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {}
+  }, [theme]);
 
   // ---- OAuth tail handling on cold load --------------------------------------
   useEffect(() => {
@@ -345,7 +361,6 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      {toast && <div className="toast">{toast}</div>}
       {!lsAvailable && (
         <div className="banner">
           Local storage unavailable — some features disabled.
@@ -372,12 +387,16 @@ export default function App() {
             <span className="title">
               {selectedThread?.slug ?? route.threadSlug}
             </span>
-            <span className="actions" />
+            <span className="actions">
+              <ThemeToggle theme={theme} onToggle={() => setTheme(theme === "dark" ? "light" : "dark")} />
+            </span>
           </>
         ) : (
           <>
             <span className="title">zutot-lab-os</span>
-            <span className="actions" />
+            <span className="actions">
+              <ThemeToggle theme={theme} onToggle={() => setTheme(theme === "dark" ? "light" : "dark")} />
+            </span>
           </>
         )}
       </div>
@@ -386,7 +405,10 @@ export default function App() {
         <aside className="pane-left">
           <div className="header">
             <span className="title">Threads</span>
-            <span className="folder">zutot-lab-os/</span>
+            <span className="folder-row">
+              <span className="folder">zutot-lab-os/</span>
+              <ThemeToggle theme={theme} onToggle={() => setTheme(theme === "dark" ? "light" : "dark")} />
+            </span>
           </div>
           <ThreadList
             threads={ui ? ui.threads : null}
@@ -401,7 +423,6 @@ export default function App() {
               thread={selectedThread}
               studentProjectId={studentProjectId}
               onOpenJob={onOpenJob}
-              onShowToast={showToast}
             />
           ) : ui === null ? (
             <div className="empty-list">Loading…</div>
@@ -424,6 +445,26 @@ export default function App() {
         />
       )}
     </div>
+  );
+}
+
+function ThemeToggle({
+  theme,
+  onToggle,
+}: {
+  theme: Theme;
+  onToggle: () => void;
+}) {
+  const label = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+  return (
+    <button
+      className="theme-toggle"
+      onClick={onToggle}
+      title={label}
+      aria-label={label}
+    >
+      {theme === "dark" ? "☀" : "☾"}
+    </button>
   );
 }
 

@@ -5,28 +5,12 @@ interface Props {
   job: DerivedJob;
   threadSlug: string;
   studentProjectId: string | null;
-  onShowToast: (msg: string) => void;
 }
 
-export function QuestionCard({
-  job,
-  threadSlug,
-  studentProjectId,
-  onShowToast,
-}: Props) {
-  const prompt = `Answer the open question in \`jobs/running/${job.id}/question.md\` (thread: \`${threadSlug}\`). When you have an answer, write it to \`jobs/running/${job.id}/answer.md\` so the worker can resume.`;
+export function QuestionCard({ job, studentProjectId }: Props) {
   const href = studentProjectId
     ? `https://claude.ai/project/${studentProjectId}`
     : null;
-
-  function onClick(e: React.MouseEvent) {
-    if (!href) {
-      e.preventDefault();
-      return;
-    }
-    navigator.clipboard?.writeText(prompt).catch(() => {});
-    onShowToast("Prompt copied — paste it into Student.");
-  }
 
   return (
     <div className="question-card">
@@ -35,23 +19,18 @@ export function QuestionCard({
         className="body"
         dangerouslySetInnerHTML={{ __html: renderMarkdown(job.question || "") }}
       />
-      <div className="footer">
-        {href ? (
+      {href && (
+        <div className="footer">
           <a
             className="btn primary"
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={onClick}
           >
             Answer in Student chat ↗
           </a>
-        ) : (
-          <button className="btn primary" onClick={onClick}>
-            Answer in Student chat ↗
-          </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

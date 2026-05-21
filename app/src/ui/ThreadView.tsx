@@ -8,11 +8,10 @@ interface Props {
   thread: DerivedThread;
   studentProjectId: string | null;
   onOpenJob: (id: string) => void;
-  onShowToast: (msg: string) => void;
 }
 
 function overleafWebUrl(url: string): string {
-  const m = url.match(/^https?:\/\/git\.overleaf\.com\/([^/?#]+)/i);
+  const m = url.match(/^https?:\/\/(?:[^@/]+@)?git\.overleaf\.com\/([^/?#]+)/i);
   if (m) return `https://www.overleaf.com/project/${m[1]}`;
   return url;
 }
@@ -21,23 +20,12 @@ export function ThreadView({
   thread,
   studentProjectId,
   onOpenJob,
-  onShowToast,
 }: Props) {
-  const prompt = `Resume work on thread \`${thread.slug}\`. Read \`threads/${thread.slug}.md\` and any relevant files under \`jobs/\` before responding.`;
   const studentHref = studentProjectId
     ? `https://claude.ai/project/${studentProjectId}`
     : null;
 
   const pendingExpanded = thread.jobs.pending.length <= 5;
-
-  function studentClick(e: React.MouseEvent) {
-    if (!studentHref) {
-      e.preventDefault();
-      return;
-    }
-    navigator.clipboard?.writeText(prompt).catch(() => {});
-    onShowToast("Prompt copied — paste it into Student.");
-  }
 
   return (
     <>
@@ -54,20 +42,15 @@ export function ThreadView({
               Overleaf ↗
             </a>
           )}
-          {studentHref ? (
+          {studentHref && (
             <a
               className="btn primary"
               href={studentHref}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={studentClick}
             >
               💬 Student
             </a>
-          ) : (
-            <button className="btn primary" onClick={studentClick}>
-              💬 Student
-            </button>
           )}
         </div>
       </div>
@@ -85,7 +68,6 @@ export function ThreadView({
               job={j}
               threadSlug={thread.slug}
               studentProjectId={studentProjectId}
-              onShowToast={onShowToast}
             />
           ))}
         </div>

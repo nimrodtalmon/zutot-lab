@@ -5,6 +5,9 @@ const PKCE_KEY = "zutot.observer.pkce";
 const SCOPE = "https://www.googleapis.com/auth/drive.readonly";
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+const CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET as
+  | string
+  | undefined;
 
 export function getClientId(): string {
   if (!CLIENT_ID) {
@@ -105,6 +108,7 @@ export async function finishAuthFlowIfNeeded(): Promise<DriveToken | null> {
     grant_type: "authorization_code",
     redirect_uri: window.location.origin + window.location.pathname,
   });
+  if (CLIENT_SECRET) body.set("client_secret", CLIENT_SECRET);
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },

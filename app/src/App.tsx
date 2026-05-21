@@ -54,6 +54,14 @@ export default function App() {
   const [resultCache, setResultCache] = useState<Record<string, string>>({});
   const [resultLoadingId, setResultLoadingId] = useState<string | null>(null);
   const [lastVisitVer, setLastVisitVer] = useState(0); // re-derive bump
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    if (toastTimerRef.current !== null) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = window.setTimeout(() => setToast(null), 3500);
+  }, []);
 
   // ---- OAuth tail handling on cold load --------------------------------------
   useEffect(() => {
@@ -337,6 +345,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      {toast && <div className="toast">{toast}</div>}
       {!lsAvailable && (
         <div className="banner">
           Local storage unavailable — some features disabled.
@@ -380,7 +389,7 @@ export default function App() {
             <span className="folder">zutot-lab-os/</span>
           </div>
           <ThreadList
-            threads={ui?.threads ?? []}
+            threads={ui ? ui.threads : null}
             selected={route.threadSlug}
             onSelect={onSelectThread}
           />
@@ -392,7 +401,10 @@ export default function App() {
               thread={selectedThread}
               studentProjectId={studentProjectId}
               onOpenJob={onOpenJob}
+              onShowToast={showToast}
             />
+          ) : ui === null ? (
+            <div className="empty-list">Loading…</div>
           ) : (
             <div className="empty-list">Select a thread.</div>
           )}

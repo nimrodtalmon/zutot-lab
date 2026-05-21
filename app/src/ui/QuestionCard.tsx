@@ -5,20 +5,27 @@ interface Props {
   job: DerivedJob;
   threadSlug: string;
   studentProjectId: string | null;
+  onShowToast: (msg: string) => void;
 }
 
-export function QuestionCard({ job, threadSlug, studentProjectId }: Props) {
+export function QuestionCard({
+  job,
+  threadSlug,
+  studentProjectId,
+  onShowToast,
+}: Props) {
   const prompt = `Answer the open question in \`jobs/running/${job.id}/question.md\` (thread: \`${threadSlug}\`). When you have an answer, write it to \`jobs/running/${job.id}/answer.md\` so the worker can resume.`;
   const href = studentProjectId
-    ? `https://claude.ai/project/${studentProjectId}/new?q=${encodeURIComponent(prompt)}`
+    ? `https://claude.ai/project/${studentProjectId}`
     : null;
 
   function onClick(e: React.MouseEvent) {
     if (!href) {
       e.preventDefault();
-      navigator.clipboard?.writeText(prompt).catch(() => {});
-      alert("Prompt copied to clipboard — paste it into Student.");
+      return;
     }
+    navigator.clipboard?.writeText(prompt).catch(() => {});
+    onShowToast("Prompt copied — paste it into Student.");
   }
 
   return (

@@ -2,12 +2,15 @@ import type { DerivedThread } from "../types";
 import { relTime } from "../state/derive";
 
 interface Props {
-  threads: DerivedThread[];
+  threads: DerivedThread[] | null;
   selected: string | null;
   onSelect: (slug: string) => void;
 }
 
 export function ThreadList({ threads, selected, onSelect }: Props) {
+  if (threads === null) {
+    return <div className="empty-list">Loading threads…</div>;
+  }
   if (threads.length === 0) {
     return (
       <div className="empty-list">

@@ -39,6 +39,8 @@ def git(*args: str) -> subprocess.CompletedProcess:
         check=False,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
 
 
@@ -57,6 +59,8 @@ def run_job(job_path: Path) -> tuple[bool, str]:
             cwd=REPO_ROOT,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=JOB_TIMEOUT,
         )
         ok = result.returncode == 0

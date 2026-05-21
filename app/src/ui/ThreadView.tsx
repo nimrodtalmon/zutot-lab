@@ -21,11 +21,16 @@ export function ThreadView({
   studentProjectId,
   onOpenJob,
 }: Props) {
+  const prompt = `Resume work on thread \`${thread.slug}\`. Read \`threads/${thread.slug}.md\` and any relevant files under \`jobs/\` before responding.`;
   const studentHref = studentProjectId
-    ? `https://claude.ai/project/${studentProjectId}`
+    ? `https://claude.ai/project/${studentProjectId}/new?q=${encodeURIComponent(prompt)}`
     : null;
 
   const pendingExpanded = thread.jobs.pending.length <= 5;
+
+  function studentClick() {
+    navigator.clipboard?.writeText(prompt).catch(() => {});
+  }
 
   return (
     <>
@@ -48,6 +53,8 @@ export function ThreadView({
               href={studentHref}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={studentClick}
+              title="Open Student chat with this thread's context"
             >
               💬 Student
             </a>
